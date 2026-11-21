@@ -183,3 +183,9 @@ them appear instantly for everyone viewing the same photo, without refreshing th
 ### Test the real-time feature
 Open the same photo in two browsers (one normal, one incognito), post a comment in one,
 and it appears instantly in the other.
+
+### Optional feature: live upload notifications
+- When a photo is uploaded, `photoController.js` broadcasts a `photo:new` event to every connected client (`io.emit`).
+- `UploadNotifier.jsx` (mounted once in `App.jsx`) shows a toast with a link to the new photo. Users are not notified about their own uploads.
+- `Gallery.jsx` also listens for `photo:new` and reloads the list, so new photos appear without a refresh.
+- The notification is wrapped in its own try/catch, so a socket problem can never break an upload.
