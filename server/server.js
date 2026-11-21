@@ -3,6 +3,8 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
+const http = require("http");
+const { initSocket } = require("./socket");
 const photoRoutes = require("./routes/photoRoutes");
 
 const connectDB = require("./config/db");
@@ -75,7 +77,11 @@ const startServer = async () => {
 
         const PORT = process.env.PORT || 5000;
 
-        app.listen(PORT, () => {
+        // Socket.io needs a raw HTTP server that Express and Socket.io share
+        const httpServer = http.createServer(app);
+        initSocket(httpServer);
+
+        httpServer.listen(PORT, () => {
             console.log(`Server running on http://localhost:${PORT}`);
         });
     } catch (error) {

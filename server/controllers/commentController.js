@@ -1,6 +1,7 @@
 
 const Comment = require("../models/Comment");
 const Photo = require("../models/Photo");
+const { getIO, roomName } = require("../socket");
 
 // ==========================================
 // ADD COMMENT
@@ -31,6 +32,9 @@ const addComment = async (req, res, next) => {
         // Return comment with user information
         const populatedComment = await Comment.findById(newComment._id)
             .populate("userId", "firstName lastName");
+
+        // Real-time: broadcast the new comment to everyone viewing this photo
+        getIO().to(roomName(photo._id)).emit("comment:new", populatedComment);
 
         return res.status(201).json({
             success: true,
