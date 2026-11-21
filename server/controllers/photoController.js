@@ -1,6 +1,7 @@
 
 const Photo = require("../models/Photo");
 const Comment = require("../models/Comment");
+const { getIO } = require("../socket");
 
 const fs = require("fs/promises");
 const path = require("path");
@@ -78,6 +79,16 @@ const uploadPhoto = async (req, res, next) => {
             title,
             description
         });
+
+        // Real-time (optional feature): tell every connected client about the new photo.
+        // Wrapped in its own try/catch so a notification problem can never fail the upload.
+        try {
+            const populatedPhoto = await Photo.findById(photo._id)
+                .populate("userId", "firstName lastName");
+            getIO().emit("photo:new", populatedPhoto);
+        } catch (socketError) {
+            console.error("Socket notification failed:", socketError.message);
+        }
 
         return res.status(201).json({
             success: true,
