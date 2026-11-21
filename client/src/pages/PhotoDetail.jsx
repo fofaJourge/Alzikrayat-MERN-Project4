@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import api from '../api/axios'
 import { useAuth } from '../context/AuthContext'
+import { createSocket } from '../socket'
 
 function PhotoDetail() {
   // useParams reads the :id part of the URL /photos/:id
@@ -44,6 +45,31 @@ function PhotoDetail() {
     fetchPhoto()
   }, [fetchPhoto])
 
+  // Adds a comment to the list unless it is already there.
+  // The author receives the comment twice (API response + socket event),
+  // so we check the _id to avoid showing duplicates.
+  const addCommentToList = useCallback((newComment) => {
+    setComments((prev) =>
+      prev.some((c) => c._id === newComment._id) ? prev : [...prev, newComment]
+    )
+  }, [])
+
+  // Real-time comments: join this photo's room and listen for new comments
+  useEffect(() => {
+    const socket = createSocket()
+
+    // 'connect' also fires after a reconnect, so the room is re-joined automatically
+    socket.on('connect', () => socket.emit('photo:join', id))
+    socket.on('comment:new', addCommentToList)
+
+    // Cleanup when the page closes or the photo id changes
+    return () => {
+      socket.emit('photo:leave', id)
+      socket.off('comment:new', addCommentToList)
+      socket.disconnect()
+    }
+  }, [id, addCommentToList])
+
   // Show the Delete button only to the owner (the server checks ownership again)
   const ownerId = photo?.userId?._id || photo?.userId
   const currentUserId = user?._id || user?.id
@@ -52,7 +78,7 @@ function PhotoDetail() {
     Boolean(currentUserId) &&
     String(ownerId) === String(currentUserId)
 
-  // POST /api/photos/:id/comments, then reload so the new comment appears without a page refresh
+  // POST /api/photos/:id/comments; the new comment shows instantly and Socket.io pushes it to other viewers
   const handleComment = async (e) => {
     e.preventDefault()
     setCommentError('')
@@ -65,12 +91,12 @@ function PhotoDetail() {
     setCommentLoading(true)
 
     try {
-      await api.post(`/photos/${id}/comments`, {
+      const response = await api.post(`/photos/${id}/comments`, {
         comment: commentText,
       })
 
       setCommentText('')
-      await fetchPhoto()
+      addCommentToList(response.data.comment)
     } catch (err) {
       setCommentError(
         err.response?.data?.message ||
