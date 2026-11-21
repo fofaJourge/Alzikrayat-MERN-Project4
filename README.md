@@ -150,3 +150,36 @@ Error status codes used: `400` validation error, `401` not logged in or invalid 
 Alzikrayat MERN Project — Advanced Web Technologies, Sudan University of Science and Technology.
 
 Submitted by: Anfal Abdelhamed Ali Ismaeil, Department: Software Engineering
+
+---
+
+## Project 4 (Bonus): Track D - Real-Time WebSocket (Socket.io)
+
+**Rationale:** Comments are the most interactive part of Alzikrayat. Socket.io makes
+them appear instantly for everyone viewing the same photo, without refreshing the page.
+
+### How it works
+- Server: Socket.io is attached to the Express HTTP server (`server/socket.js`).
+- Each photo detail page joins a room named `photo:<photoId>`.
+- After a comment is saved (`commentController.js`), the server emits `comment:new` to that room only.
+- Client: `PhotoDetail.jsx` connects inside `useEffect`, listens for `comment:new`,
+  and disconnects on unmount (cleanup).
+- The Vite dev proxy forwards `/socket.io` (with WebSocket support) to the Express server.
+
+### Setup
+    cd server && npm install
+    cd ../client && npm install
+
+### Environment variables (server/.env, see server/.env.example)
+    PORT=5000
+    MONGODB_URI=<your MongoDB connection string>
+    JWT_SECRET=<your secret>
+    CLIENT_URL=http://localhost:5173
+
+### Run the full stack
+    cd server && npm run dev
+    cd client && npm run dev     (open http://localhost:5173)
+
+### Test the real-time feature
+Open the same photo in two browsers (one normal, one incognito), post a comment in one,
+and it appears instantly in the other.
