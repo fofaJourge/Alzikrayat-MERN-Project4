@@ -7,6 +7,7 @@ import api from '../api/axios'
 import PhotoCard from '../components/PhotoCard'
 import UploadForm from '../components/UploadForm'
 import { useAuth } from '../context/AuthContext'
+import { createSocket } from '../socket'
 
 function Gallery() {
   const { isAuthenticated } = useAuth()
@@ -38,6 +39,17 @@ function Gallery() {
   useEffect(() => {
     fetchPhotos()
   }, [fetchPhotos, refreshKey])
+
+  // Real-time gallery: when anyone uploads a photo, reload the list automatically
+  useEffect(() => {
+    const socket = createSocket()
+    socket.on('photo:new', fetchPhotos)
+
+    return () => {
+      socket.off('photo:new', fetchPhotos)
+      socket.disconnect()
+    }
+  }, [fetchPhotos])
 
   // Called by UploadForm after a successful upload: triggers a reload of the list
   const handleUploaded = () => {

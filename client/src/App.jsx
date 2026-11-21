@@ -3,6 +3,7 @@
 
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar'
+import UploadNotifier from './components/UploadNotifier'
 import Home from './pages/Home'
 import Gallery from './pages/Gallery'
 import PhotoDetail from './pages/PhotoDetail'
@@ -17,6 +18,7 @@ function App() {
     <BrowserRouter>
       <div className="app">
         <Navbar />
+        <UploadNotifier />
 
         <Routes>
           <Route path="/" element={<Home />} />
